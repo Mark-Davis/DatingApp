@@ -29,7 +29,7 @@ namespace DatingApp.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterUserDTO registerUser)
+        public async Task<IActionResult> Register(RegisterUserDto registerUser)
         {
             registerUser.username = registerUser.username.ToLower();
 
@@ -49,7 +49,7 @@ namespace DatingApp.API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDTO loginUser)
+        public async Task<IActionResult> Login(LoginUserDto loginUser)
         {
             User user = await _repository.Login(loginUser.username.ToLower(), loginUser.password);
             if (user == null)
