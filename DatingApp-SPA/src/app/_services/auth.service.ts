@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import {map} from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { User } from '../_models/user';
 
 @Injectable({
   providedIn: 'root'
@@ -10,23 +12,44 @@ import { environment } from 'src/environments/environment';
 export class AuthService {
   baseUrl = environment.apiUrl + 'auth/';
   jwtHelper = new JwtHelperService();
-  decodeToken: any;
+  decodedToken: any;
+  currentUser: User;
+  private photoUrl = new BehaviorSubject<string>('../../assets/user.png');
+  currentPhotoUrl = this.photoUrl.asObservable();
 
   constructor(private http: HttpClient) { }
 
+  changeMemberPhoto(photoUrl: string) {
+    this.currentUser.photoUrl = photoUrl;
+    localStorage.setItem('user', JSON.stringify(this.currentUser));
+    this.photoUrl.next(photoUrl);
+  }
+
   login(model: any) {
     return this.http.post(this.baseUrl + 'login', model)
-    .pipe(map((response: any) => {
-      const user = response;
-      if (user) {
-        this.decodeToken = this.jwtHelper.decodeToken(user.token);
-        localStorage.setItem('token', user.token);
-       }
-    }));
+      .pipe(map((response: any) => {
+        const user = response;
+        if (user) {
+          this.decodedToken = this.jwtHelper.decodeToken(user.token);
+          localStorage.setItem('token', user.token);
+          this.currentUser = user.user;
+          localStorage.setItem('user', JSON.stringify(user.user));
+          this.changeMemberPhoto(this.currentUser.photoUrl);
+          console.log(user.photoUrl);
+        }
+      }));
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    this.decodedToken = null;
+
+    localStorage.removeItem('user');
+    this.currentUser = null;
   }
 
   register(model: any) {
-    return this.http.post(this.baseUrl + 'register', model)
+    return this.http.post(this.baseUrl + 'register', model);
   }
 
   loggedIn() {
@@ -34,10 +57,16 @@ export class AuthService {
     return !this.jwtHelper.isTokenExpired(token);
   }
 
-  setDecodedToken() {
+  setTokenAndUser() {
     const token = localStorage.getItem('token');
     if (token) {
-      this.decodeToken = this.jwtHelper.decodeToken(token);
+      this.decodedToken = this.jwtHelper.decodeToken(token);
+    }
+
+    const user: User = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      this.currentUser = user;
+      this.changeMemberPhoto(user.photoUrl);
     }
   }
 }
