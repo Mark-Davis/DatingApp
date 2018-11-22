@@ -17,11 +17,11 @@
           </div>
           <div>
             <strong>Last active:</strong>
-            <p>{{user.lastActive}}</p>
+            <p>{{user.lastActive | timeAgo}}</p>
           </div>
           <div>
               <strong>Member since:</strong>
-              <p>{{user.created}}</p>
+              <p>{{user.created | date: 'mediumDate'}}</p>
           </div>
         </div>
         <div class="card-footer">
@@ -37,13 +37,13 @@
         <tabset class="member-tabset">
           <tab heading="About {{user.knownAs}}">
             <h4>Description</h4>
-            <p>{{user.introduction}}</p>
+            <p>{{user.introduction || 'No introduction provided.'}}</p>
             <h4>Looking For</h4>
-            <p>{{user.lookingFor}}</p>
+            <p>{{user.lookingFor || 'Unknown.'}}</p>
           </tab>
           <tab heading="Interests">
             <h4>Interests</h4>
-            <p>{{user.interests}}</p>
+            <p>{{user.interests || 'No interests provided.'}}</p>
           </tab>
           <tab heading="Photos">
               <ngx-gallery [options]="galleryOptions" [images]="galleryImages"></ngx-gallery>
