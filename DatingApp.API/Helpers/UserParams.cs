@@ -25,6 +25,8 @@ namespace DatingApp.API.Helpers
             set { maxAge = (value > MaxAge) ? MaxAge : value;}
         }
         public string OrderBy { get; set; }
+        public bool Likees { get; set; } = false;
+        public bool Likers { get; set; } = false;
 
         const int MaxPageSize = 50;
         
