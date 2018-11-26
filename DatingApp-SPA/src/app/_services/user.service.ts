@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { User } from '../_models/user';
 import { PaginationResult } from '../_models/pagination';
 import { map } from 'rxjs/operators';
+import { Message } from '../_models/message';
 
 @Injectable({
   providedIn: 'root'
@@ -69,5 +70,48 @@ export class UserService {
 
   sendLike(userId: number, recipientId: number) {
     return this.httpClient.post(this.baseUrl + 'users/' + userId + '/like/' + recipientId, {});
+  }
+
+  getMessages(userId: number, page?, itemsPerPage?, messageContainer?) {
+    const paginationResult: PaginationResult<Message[]> = new PaginationResult<Message[]>();
+    let params = new HttpParams();
+
+    if (page != null) {
+      params = params.append('pageNumber', page);
+    }
+    if (itemsPerPage != null) {
+      params = params.append('pageSize', itemsPerPage);
+    }
+    if (messageContainer != null) {
+      params = params.append('messageContainer', messageContainer);
+    }
+
+    return this.httpClient.get<Message[]>(this.baseUrl + 'users/' + userId + '/messages', {observe: 'response', params})
+      .pipe(
+        map(response => {
+          paginationResult.result = response.body;
+          const paginationHeader = response.headers.get('Pagination');
+          if (paginationHeader != null) {
+            paginationResult.pagination = JSON.parse(paginationHeader);
+          }
+          return paginationResult;
+        })
+      );
+  }
+
+  getMessageThread(userId: number, recipientId: number) {
+    return this.httpClient.get<Message[]>(this.baseUrl + 'users/' + userId + '/messages/thread/' + recipientId);
+  }
+
+  sendMessage(id: number, message: Message) {
+    return this.httpClient.post(this.baseUrl + 'users/' + id + '/messages/', message);
+  }
+
+  deleteMessage(id: number, userId: number) {
+    return this.httpClient.post(this.baseUrl + 'users/' + userId + '/messages/' + id, {});
+  }
+
+  markAsRead(id: number, userId: number) {
+    return this.httpClient.post(this.baseUrl + 'users/' + userId + '/message/' + id + '/read', {});
   }
 }

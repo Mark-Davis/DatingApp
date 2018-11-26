@@ -11,25 +11,28 @@ namespace DatingApp.API.Helpers
         public AutoMapperProfiles()
         {
             CreateMap<User, UserForListDto>()
-                .ForMember(dest => dest.PhotoUrl, opt => {
-                    opt.MapFrom(src => src.Photos.FirstOrDefault(p => p.IsMain).Url);
-                })
-                .ForMember(dest => dest.Age, opt => {
-                     opt.ResolveUsing(d => d.DateOfBirth.CalculateAge());
-                });
+                .ForMember(u => u.PhotoUrl,
+                 opt => {opt.MapFrom(u => u.Photos.FirstOrDefault(p => p.IsMain).Url);})
+                .ForMember(u => u.Age,
+                    opt => {opt.ResolveUsing(d => d.DateOfBirth.CalculateAge());});
             CreateMap<User, UserForDetailedDto>()
-                .ForMember(dest => dest.PhotoUrl, opt => {
-                    opt.MapFrom(src => src.Photos.FirstOrDefault(p => p.IsMain).Url);
-                })
-                .ForMember(dest => dest.Age, opt => {
-                     opt.ResolveUsing(d => d.DateOfBirth.CalculateAge());
-                });
+                .ForMember(u => u.PhotoUrl,
+                    opt => {opt.MapFrom(u => u.Photos.FirstOrDefault(p => p.IsMain).Url);})
+                .ForMember(u => u.Age,
+                    opt => {opt.ResolveUsing(d => d.DateOfBirth.CalculateAge());});
             CreateMap<UserForUpdatesDto, User>();
-         
+            CreateMap<RegisterUserDto, User>();
+
             CreateMap<PhotoForCreationDto, Photo>();
             CreateMap<Photo, PhotoForDetailedDto>();
             CreateMap<Photo, PhotoForReturnDto>();
-            CreateMap<RegisterUserDto, User>();
+
+            CreateMap<MessageForCreationDto, Message>();
+            CreateMap<Message, MessageToReturnDto>()
+                .ForMember(m => m.SenderPhotoUrl,
+                    opt => {opt.MapFrom(m => m.Sender.Photos.FirstOrDefault(p => p.IsMain).Url);})
+                .ForMember(m => m.RecipientPhotoUrl,
+                    opt => {opt.MapFrom(m => m.Recipient.Photos.FirstOrDefault(p => p.IsMain).Url);});
         }
     }
 }
