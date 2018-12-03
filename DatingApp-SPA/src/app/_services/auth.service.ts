@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { User } from '../_models/user';
+import { decode } from 'punycode';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +36,6 @@ export class AuthService {
           this.currentUser = user.user;
           localStorage.setItem('user', JSON.stringify(user.user));
           this.changeMemberPhoto(this.currentUser.photoUrl);
-          console.log(user.photoUrl);
         }
       }));
   }
@@ -68,5 +68,18 @@ export class AuthService {
       this.currentUser = user;
       this.changeMemberPhoto(user.photoUrl);
     }
+  }
+
+  hasRole(allowedRoles): boolean {
+    let isMatch = false;
+    const userRoles = this.decodedToken.role as Array<string>;
+    allowedRoles.forEach(role => {
+      if (userRoles.includes(role)) {
+        isMatch = true;
+        return;
+      }
+    });
+
+      return isMatch;
   }
 }

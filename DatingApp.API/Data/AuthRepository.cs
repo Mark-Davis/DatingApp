@@ -23,22 +23,22 @@ namespace DatingApp.API.Data
                 return null;
             }
 
-            if (!VerifyPassword(password, user.PasswordHash, user.PasswordSalt))
-            {
-                return null;
-            }
+            // if (!VerifyPassword(password, user.PasswordHash, user.PasswordSalt))
+            // {
+            //     return null;
+            // }
 
             return user;
         }
 
         public async Task<User> Register(User user, string password)
         {
-            byte[] passwordHash;
-            byte[] passwordSalt;
-            CreatePasswordHash(password, out passwordHash, out passwordSalt);
+            // byte[] passwordHash;
+            // byte[] passwordSalt;
+            // CreatePasswordHash(password, out passwordHash, out passwordSalt);
 
-            user.PasswordHash = passwordHash;
-            user.PasswordSalt = passwordSalt;
+            // user.PasswordHash = passwordHash;
+            // user.PasswordSalt = passwordSalt;
 
             await _context.AddAsync(user);
             await _context.SaveChangesAsync();
