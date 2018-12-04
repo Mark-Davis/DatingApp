@@ -11,3 +11,16 @@ img.img-thimbnail {
 input[type=file] {
     color: transparent;
 }
+
+.photo-unapproved {
+    opacity: 0.25;
+}
+
+.photo-unapproved-text {
+    position: absolute;
+    bottom: 30%;
+    color: red;
+    font-size: small;
+    max-width: 100px;
+    align-self: center;
+}

@@ -1,12 +1,18 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using DatingApp.API.Data;
 using DatingApp.API.DTOs;
+using DatingApp.API.Helpers;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DatingApp.API.Controllers
 {
@@ -16,11 +22,29 @@ namespace DatingApp.API.Controllers
     {
         private readonly DataContext _context;
         private readonly UserManager<User> _userManager;
-        public AdminController(DataContext context, UserManager<User> userManager)
+        private readonly IMapper _mapper;
+        private readonly IOptions<CloudinarySettings> _cloudinaryConfig;
+        private readonly Cloudinary _cloudinary;
+
+        public AdminController(
+            DataContext context,
+            UserManager<User> userManager,
+            IMapper mapper,
+            IOptions<CloudinarySettings> cloudinaryConfig)
         {
+            _mapper = mapper;
             _userManager = userManager;
             _context = context;
 
+           _cloudinaryConfig = cloudinaryConfig;
+
+            Account account = new Account(
+                    _cloudinaryConfig.Value.CloudName,
+                    _cloudinaryConfig.Value.ApiKey,
+                    _cloudinaryConfig.Value.ApiSecret
+            );
+
+            _cloudinary = new Cloudinary(account);
         }
 
         [Authorize(Policy = "RequireAdminRole")]
@@ -51,7 +75,7 @@ namespace DatingApp.API.Controllers
 
             var selectedRoles = roleEdit.RoleNames;
 
-            selectedRoles = selectedRoles ?? new string[]{};
+            selectedRoles = selectedRoles ?? new string[] { };
 
             var result = await _userManager.AddToRolesAsync(user, selectedRoles.Except(userRoles));
             if (!result.Succeeded)
@@ -69,10 +93,76 @@ namespace DatingApp.API.Controllers
         }
 
         [Authorize(Policy = "ModeratePhotoRole")]
-        [HttpGet("photosForModeration")]
-        public IActionResult GetPhotosForModeration()
+        [HttpGet("photos")]
+        public async Task<IActionResult> GetPhotosForModeration()
         {
-            return Ok("All users can see this");
+            var photos = await _context.Photos
+                .Include(p => p.User)
+                .IgnoreQueryFilters()
+                .Where(p => p.IsApproved == false)
+                .Select(p => new {
+                    Id = p.Id,
+                    UserName = p.User.UserName,
+                    Url = p.Url,
+                    IsApproved = p.IsApproved
+                }).ToListAsync();
+
+            return Ok(photos);
+        }
+
+        [Authorize(Policy = "ModeratePhotoRole")]
+        [HttpPost("photos/{id}/approve")]
+        public async Task<IActionResult> ApprovePhoto(int id)
+        {
+            var photo = await _context.Photos
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (photo.IsApproved)
+            {
+                return BadRequest("Photo is already approved");
+            }
+
+            photo.IsApproved = true;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [Authorize(Policy = "ModeratePhotoRole")]
+        [HttpPost("photos/{id}/reject")]
+        public async Task<IActionResult> RejectPhoto(int id)
+        {
+            var photo = await _context.Photos
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (photo.IsMain)
+            {
+                return BadRequest("Main photo cannot be rejected");
+            }
+
+            if (photo.IsApproved)
+            {
+                return BadRequest("Approved photo cannot be rejected");
+            }
+
+            if (photo.PublicId != null)
+            {
+                var deleteParams = new DeletionParams(photo.PublicId);
+                var result = _cloudinary.Destroy(deleteParams);
+                if (result.Result != "ok")
+                {
+                    return BadRequest("Unable to delete rejected photo from Cloudinary");
+                }
+            }
+
+            _context.Photos.Remove(photo);
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }

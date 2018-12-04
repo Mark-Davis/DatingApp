@@ -92,13 +92,13 @@ namespace DatingApp.API.Controllers
 
             messageForCreation.SenderId = userId;
 
-            var recipient = await _repo.GetUser(messageForCreation.RecipientId);
+            var recipient = await _repo.GetUser(messageForCreation.RecipientId, false);
             if (recipient == null)
             {
                 return BadRequest("Could not find user");
             }
 
-            var sender = await _repo.GetUser(userId);
+            var sender = await _repo.GetUser(userId, true);
             if (sender == null)
             {
                 return BadRequest("Could not find sender");
